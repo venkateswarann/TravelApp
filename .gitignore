@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.log
+instance/travel.db
+uploads/
+.env

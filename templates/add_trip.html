@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Trip - Travel Planner{% endblock %}
+
+{% block content %}
+<div class="trip-header">
+    <h1><i class="fas fa-plus"></i> Create New Trip</h1>
+    <p>Plan your next adventure</p>
+</div>
+
+<div class="card">
+    <form method="POST" action="{{ url_for('add_trip') }}">
+        <div class="form-group">
+            <label for="name">Trip Name *</label>
+            <input type="text" id="name" name="name" required placeholder="e.g., Europe Adventure 2024">
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="3" placeholder="Brief description of your trip"></textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="start_location">Start Location</label>
+                <input type="text" id="start_location" name="start_location" placeholder="e.g., London, UK">
+            </div>
+            <div class="form-group">
+                <label for="end_location">End Location</label>
+                <input type="text" id="end_location" name="end_location" placeholder="e.g., London, UK">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="start_date">Start Date *</label>
+                <input type="date" id="start_date" name="start_date" required>
+            </div>
+            <div class="form-group">
+                <label for="end_date">End Date *</label>
+                <input type="date" id="end_date" name="end_date" required>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-check"></i> Create Trip
+        </button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Cancel
+        </a>
+    </form>
+</div>
+
+<style>
+.trip-header {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.trip-header h1 {
+    color: var(--primary);
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.trip-header p {
+    color: var(--text-light);
+    font-size: 1.1rem;
+}
+
+.card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--dark);
+}
+
+input[type="text"],
+input[type="date"],
+textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+textarea {
+    resize: vertical;
+    font-family: inherit;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .card {
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}

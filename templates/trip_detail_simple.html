@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}{{ trip.name }} - Travel Planner{% endblock %}
+
+{% block content %}
+<div class="trip-header">
+    <h1>{{ trip.name }}</h1>
+    <div class="trip-meta">
+        <span><i class="fas fa-map-marker-alt"></i> {{ trip.start_location or 'London' }} → {{ trip.end_location or 'London' }}</span>
+        <span><i class="fas fa-calendar"></i> {{ trip.start_date.strftime('%b %d') if trip.start_date else 'Mar 1' }} - {{ trip.end_date.strftime('%b %d, %Y') if trip.end_date else 'Mar 15, 2024' }}</span>
+    </div>
+</div>
+
+<div class="tabs">
+    <button class="tab-button active" onclick="showTab('itinerary')">
+        <i class="fas fa-route"></i> Itinerary
+    </button>
+    <button class="tab-button" onclick="showTab('hotels')">
+        <i class="fas fa-bed"></i> Hotels
+    </button>
+    <button class="tab-button" onclick="showTab('travel-info')">
+        <i class="fas fa-ticket"></i> Travel Info
+    </button>
+    <button class="tab-button" onclick="showTab('expenses')">
+        <i class="fas fa-euro-sign"></i> Expenses
+    </button>
+</div>
+
+<div id="itinerary" class="tab-content active">
+    <div class="card">
+        <h2>Add Itinerary</h2>
+        <form method="POST" action="{{ url_for('add_itinerary', trip_id=trip.id) }}">
+            <input type="date" name="date" placeholder="Date" required><br>
+            <input type="text" name="from_location" placeholder="From">
+            <input type="text" name="to_location" placeholder="To">
+            <input type="text" name="transport_mode" placeholder="Transport">
+            <input type="text" name="transport_time" placeholder="Time">
+            <input type="text" name="duration" placeholder="Duration">
+            <textarea name="notes" placeholder="Notes"></textarea>
+            <button type="submit" class="btn btn-primary">Add</button>
+        </form>
+    </div>
+    
+    <div id="itinerary-list">
+        <h3>Your Itinerary</h3>
+        {% for item in trip.itineraries %}
+        <div class="card">
+            <div class="card-actions">
+                <form method="POST" action="{{ url_for('delete_itinerary', trip_id=trip.id, itinerary_id=item.id) }}" style="display: inline;" onsubmit="return confirm('Delete this itinerary item?')">
+                    <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+            <strong>{{ item.date.strftime('%Y-%m-%d') }}</strong>: {{ item.from_location or '?' }} → {{ item.to_location or '?' }} 
+            {% if item.transport_mode %}<i>({{ item.transport_mode }})</i>{% endif %}
+            {% if item.notes %}<p>{{ item.notes }}</p>{% endif %}
+        </div>
+        {% else %}
+        <p>No itinerary items yet</p>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="hotels" class="tab-content">
+    <div class="card">
+        <h2>Add Hotel</h2>
+        <form method="POST" action="{{ url_for('add_hotel', trip_id=trip.id) }}">
+            <input type="text" name="name" placeholder="Hotel Name">
+            <input type="url" name="url" placeholder="Booking URL">
+            <input type="date" name="check_in" placeholder="Check-in">
+            <input type="date" name="check_out" placeholder="Check-out">
+            <textarea name="notes" placeholder="Notes"></textarea>
+            <button type="submit" class="btn btn-primary">Add Hotel</button>
+        </form>
+    </div>
+    
+    <div class="hotel-list">
+        {% for hotel in trip.hotels %}
+        <div class="card">
+            <div class="card-actions">
+                <form method="POST" action="{{ url_for('delete_hotel', trip_id=trip.id, hotel_id=hotel.id) }}" style="display: inline;" onsubmit="return confirm('Delete this hotel?')">
+                    <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+            <h4>{{ hotel.name or 'Hotel' }}</h4>
+            {% if hotel.url %}<p><a href="{{ hotel.url }}" target="_blank">Booking</a></p>{% endif %}
+            {% if hotel.address %}<p>{{ hotel.address }}</p>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="travel-info" class="tab-content">
+    <div class="card">
+        <h2>Add Travel Info</h2>
+        <form method="POST" action="{{ url_for('add_travel_info', trip_id=trip.id) }}" enctype="multipart/form-data">
+            <select name="type">
+                <option value="flight">Flight</option>
+                <option value="train">Train</option>
+                <option value="bus">Bus</option>
+            </select>
+            <input type="text" name="number" placeholder="Number">
+            <input type="text" name="departure" placeholder="Departure">
+            <input type="text" name="arrival" placeholder="Arrival">
+            <input type="text" name="booking_reference" placeholder="Booking Ref">
+            <input type="file" name="pdf" accept=".pdf">
+            <button type="submit" class="btn btn-primary">Add Travel Info</button>
+        </form>
+    </div>
+    
+    {% for info in trip.travel_infos %}
+    <div class="card">
+        <div class="card-actions">
+            <form method="POST" action="{{ url_for('delete_travel_info', trip_id=trip.id, travel_info_id=info.id) }}" style="display: inline;" onsubmit="return confirm('Delete this travel info?')">
+                <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
+        </div>
+        <strong>{{ info.type|upper }} {{ info.number }}</strong>
+        <p>{{ info.departure }} → {{ info.arrival }}</p>
+        {% if info.pdf_filename %}<a href="/uploads/{{ info.pdf_filename }}" target="_blank">📄 View PDF</a>{% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<div id="expenses" class="tab-content">
+    <div class="card">
+        <h2>Add Expense</h2>
+        <form method="POST" action="{{ url_for('add_expense', trip_id=trip.id) }}">
+            <input type="text" name="description" placeholder="Description" required>
+            <input type="number" step="0.01" name="amount" placeholder="Amount" required>
+            <select name="currency">
+                <option value="EUR">EUR</option>
+                <option value="CHF">CHF</option>
+                <option value="GBP">GBP</option>
+            </select>
+            <input type="text" name="paid_by" placeholder="Paid By" required>
+            <input type="date" name="date" required>
+            <button type="submit" class="btn btn-primary">Add Expense</button>
+        </form>
+    </div>
+    
+    {% if trip.expenses %}
+    <div class="card">
+        <h3>Expenses: €{{ "{:.2f}".format(total_expenses|default(0)) }}</h3>
+        {% for person in expenses_by_person %}
+        <p>{{ person.paid_by }}: €{{ "{:.2f}".format(person.total) }} ({{ person.count }} items)</p>
+        {% endfor %}
+    </div>
+    
+    {% for expense in trip.expenses %}
+    <div class="card">
+        <div class="card-actions">
+            <form method="POST" action="{{ url_for('delete_expense', trip_id=trip.id, expense_id=expense.id) }}" style="display: inline;" onsubmit="return confirm('Delete this expense?')">
+                <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
+        </div>
+        <strong>{{ expense.description }}</strong>: €{{ "{:.2f}".format(expense.amount) }}
+        <br>Paid by: {{ expense.paid_by }} on {{ expense.date.strftime('%Y-%m-%d') }}
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+
+<script>
+function showTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    event.target.classList.add('active');
+}
+</script>
+{% endblock %}

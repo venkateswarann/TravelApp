@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}Travel Planner{% endblock %}</title>
+    
+    <!-- Fonts and Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet Maps (Cloudflare CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- App Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            margin: 0;
+            padding-bottom: 5rem;
+        }
+
+        .navbar {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--slate-200);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.25rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-badge {
+            background: #f1f5f9;
+            padding: 0.4rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .user-badge:hover {
+            background: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Mobile Bottom Nav */
+        @media (max-width: 768px) {
+            .bottom-nav {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                border-top: 1px solid #e2e8f0;
+                display: flex;
+                justify-content: space-around;
+                padding: 0.75rem 0;
+                z-index: 1000;
+            }
+            .nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.25rem;
+                text-decoration: none;
+                color: #64748b;
+                font-size: 0.7rem;
+                font-weight: 600;
+            }
+            .nav-item.active {
+                color: #4f46e5;
+            }
+            .nav-item i {
+                font-size: 1.25rem;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .bottom-nav { display: none; }
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="{{ url_for('index') }}" class="navbar-brand">
+            <i class="fas fa-globe-europe"></i> TravelPlan
+        </a>
+        <div class="navbar-actions">
+            {% if session.get('is_admin') %}
+                <a href="{{ url_for('admin_users') }}" style="color: #4f46e5; font-size: 0.8rem; font-weight: 700; text-decoration: none; margin-right: 10px;">
+                    <i class="fas fa-users-cog"></i> Users
+                </a>
+            {% endif %}
+            {% if session.get('username') %}
+                <div class="user-badge" title="Logged in as {{ session.username }}">
+                    <i class="fas fa-user-circle"></i> 
+                    <span>{{ session.username }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" style="color: #ef4444; font-size: 0.8rem; font-weight: 700; text-decoration: none; margin-left: 5px;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            {% endif %}
+            <a href="{{ url_for('add_trip') }}" class="btn btn-primary btn-sm d-none d-md-block" style="padding: 0.4rem 0.8rem; font-size: 0.875rem;">
+                <i class="fas fa-plus"></i> New Trip
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <div class="bottom-nav">
+        <a href="{{ url_for('index') }}" class="nav-item {{ 'active' if request.endpoint == 'index' }}">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="{{ url_for('add_trip') }}" class="nav-item {{ 'active' if request.endpoint == 'add_trip' }}">
+            <i class="fas fa-plus-circle"></i>
+            <span>Add Trip</span>
+        </a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = "{{ session.get('username', '') }}";
+            if (currentUser) {
+                document.querySelectorAll('input[name="paid_by"]').forEach(input => {
+                    input.value = currentUser;
+                });
+            }
+        });
+    </script>
+</body>
+</html>
